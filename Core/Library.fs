@@ -1,6 +1,8 @@
 ﻿[<AutoOpen>]
 module Prelude
 
+open System
+
 let inline (^) f x = f x
 let inline (@@) f x = f x
 
@@ -17,10 +19,10 @@ let inline uncurry f (a, b) = f a b
 let inline (!>) (x: ^a): ^b =
     ((^a or ^b): (static member op_Implicit: ^a -> ^b) x)
 
-let [<System.Obsolete>] TODO() = raise ^ System.NotImplementedException()
+let [<Obsolete>] TODO() = raise ^ NotImplementedException()
 
 let (|Regex|_|) pattern input =
-    let m = System.Text.RegularExpressions.Regex.Match(input, pattern)
+    let m = Text.RegularExpressions.Regex.Match(input, pattern)
     if m.Success then Some(List.tail [ for g in m.Groups -> g.Value ])
     else None
 
@@ -29,16 +31,19 @@ module Result =
     let inline wrap f = try f () |> Ok with e -> Error e
 
 module Async =
-    let catch a =
-        async {
-            let! r = a |> Async.Catch
-            return match r with
-                   | Choice1Of2 x -> Ok x
-                   | Choice2Of2 e -> Error e
-        }
+    let inline map f a = async.Bind(a, f >> async.Return)
+    let inline catch a = a |> Async.Catch |> map (function Choice1Of2 x -> Ok x | Choice2Of2 e -> Error e)
+
+module List =
+    let inline isNotEmpty xs = List.isEmpty xs |> not
+
+module String =
+    let inline split (x : String) (separator : Char) = x.Split separator
 
 type Microsoft.FSharp.Control.AsyncBuilder with
-    member __.Bind (t : System.Threading.Tasks.Task<'T>, f:'T -> Async<'R>) : Async<'R> =
+    member __.Bind (t : Threading.Tasks.Task<'T>, f:'T -> Async<'R>) : Async<'R> =
         async.Bind(Async.AwaitTask t, f)
-    member __.ReturnFrom (t : System.Threading.Tasks.Task<'T>) : Async<'T> =
+    member __.ReturnFrom (t : Threading.Tasks.Task<'T>) : Async<'T> =
         async.ReturnFrom(Async.AwaitTask t)
+    member __.Bind (t : Threading.Tasks.ValueTask<'T>, f:'T -> Async<'R>) : Async<'R> =
+        async.Bind(Async.AwaitTask <| t.AsTask(), f)
