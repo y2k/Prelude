@@ -2,6 +2,7 @@
 module Prelude
 
 let inline (^) f x = f x
+let inline (@@) f x = f x
 
 let inline (<!) f a () = f a
 let inline (>>=) ma mf = async.Bind(ma, mf)
@@ -12,6 +13,9 @@ let inline always a _ = a
 let inline flip f a b = f b a
 let inline curry f a b = f (a, b)
 let inline uncurry f (a, b) = f a b
+
+let inline (!>) (x: ^a): ^b =
+    ((^a or ^b): (static member op_Implicit: ^a -> ^b) x)
 
 let [<System.Obsolete>] TODO() = raise ^ System.NotImplementedException()
 
@@ -27,5 +31,5 @@ module Result =
 type Microsoft.FSharp.Control.AsyncBuilder with
     member __.Bind (t : System.Threading.Tasks.Task<'T>, f:'T -> Async<'R>) : Async<'R> =
         async.Bind(Async.AwaitTask t, f)
-    member __.ReturnFrom (t : System.Threading.Tasks.Task<'T>) : Async<'T> = 
+    member __.ReturnFrom (t : System.Threading.Tasks.Task<'T>) : Async<'T> =
         async.ReturnFrom(Async.AwaitTask t)
