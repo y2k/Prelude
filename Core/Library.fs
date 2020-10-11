@@ -28,6 +28,15 @@ module Result =
     let inline unwrap r = match r with | Ok x -> x | Error e -> failwith e
     let inline wrap f = try f () |> Ok with e -> Error e
 
+module Async =
+    let catch a =
+        async {
+            let! r = a |> Async.Catch
+            return match r with
+                   | Choice1Of2 x -> Ok x
+                   | Choice2Of2 e -> Error e
+        }
+
 type Microsoft.FSharp.Control.AsyncBuilder with
     member __.Bind (t : System.Threading.Tasks.Task<'T>, f:'T -> Async<'R>) : Async<'R> =
         async.Bind(Async.AwaitTask t, f)
