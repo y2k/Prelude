@@ -29,6 +29,10 @@ let (|Regex|_|) pattern input =
 module Result =
     let inline unwrap r = match r with | Ok x -> x | Error e -> failwith e
     let inline wrap f = try f () |> Ok with e -> Error e
+    let inline fold fok ferror =
+        function
+        | Ok x -> fok x
+        | Error e -> ferror e
 
 module Async =
     let inline map f a = async.Bind(a, f >> async.Return)
