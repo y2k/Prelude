@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="EventBus.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Prelude.fsproj" />
+    <ProjectReference Include="..\Atom\Atom.fsproj" />
+    <ProjectReference Include="..\event-bus-api\event-bus-api.fsproj" />
+  </ItemGroup>
+
+</Project>
