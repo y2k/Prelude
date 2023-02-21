@@ -1,7 +1,5 @@
 ﻿namespace Y2k.EventBus
 
-open System
-
 module private Async =
     let loopAll axs =
         let loop a =
@@ -16,8 +14,8 @@ module private Async =
 
         axs |> List.map loop |> Async.Parallel |> Async.Ignore
 
-module StoreWrapper =
-    let makeDispatch (handleMsg: Event -> Command list Async) (handleCmd: (Event -> unit) -> Command -> unit) =
+module Router =
+    let private makeDispatch (handleMsg: Event -> Command list Async) (handleCmd: (Event -> unit) -> Command -> unit) =
         let mail: MailboxProcessor<Event> =
             MailboxProcessor.Start(fun mail ->
                 async {
@@ -34,25 +32,6 @@ module StoreWrapper =
 
         mail.Post
 
-module StoreAtom =
-    type 's StateStore = { mutable state: 's }
-
-    let inline make () : ^state StateStore =
-        { state = (^state: (static member empty: ^state) ()) }
-
-    let make_ empty : _ StateStore = { state = empty }
-
-    let addStateCofx (state: _ StateStore) f = fun x -> f state.state x
-
-    let handleCommand (stateHolder: 'state StateStore) (cmd: Command) =
-        match cmd with
-        | :? 'state as newState -> stateHolder.state <- newState
-        | _ -> ()
-
-    let handleCommandFun (stateHolder: 'state StateStore) update (cmd: Command) =
-        stateHolder.state <- update stateHolder.state cmd
-
-module Router =
     type t =
         { eventHandlers: (Async<Event -> Command list>) list
           commandHandlers: ((Event -> unit) -> Command -> unit) list
@@ -95,7 +74,7 @@ module Router =
             |> List.rev
             |> List.iter (fun commandHandler -> commandHandler dispatch cmd)
 
-        let dispatch = StoreWrapper.makeDispatch handleEvent handleCommand
+        let dispatch = makeDispatch handleEvent handleCommand
         dispatch startEvent
         printfn "Started..."
 
@@ -135,7 +114,7 @@ module EventLocker =
 
                 f e
 
-module AsyncRouter =
+module StateRouter =
     type t<'a when 'a: not struct> = private { state: 'a Atom.IAtom }
     let make empty = { state = Atom.atom empty }
 
